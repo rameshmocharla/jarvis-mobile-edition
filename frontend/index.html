@@ -4,234 +4,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS AI Assistant</title>
+    <title>JARVIS Mobile Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <header>
+    <!-- HEADER -->
+    <header class="header">
         <h1>J.A.R.V.I.S</h1>
-        <p>JUST A RATHER VERY INTELLIGENT SYSTEM</p>
-        <span id="status">SYSTEM ONLINE</span>
+        <p>MOBILE EDITION</p>
     </header>
 
-    <main>
-        <section class="assistant-panel">
+    <!-- JARVIS CORE -->
+    <main class="main-container">
+
+        <section class="core-section">
             <div class="core">
-                <div class="core-ring"></div>
-                <div class="core-ring ring-two"></div>
-                <div class="core-center">
-                    <span>J</span>
-                </div>
+                <div class="core-outer-ring"></div>
+                <div class="core-inner-ring"></div>
+                <div class="core-center"></div>
             </div>
 
-            <h2 id="assistant-status">Hello, Sir.</h2>
-            <p id="assistant-message">
-                I am JARVIS. Your personal AI assistant.
-            </p>
-
-            <button id="voice-btn" onclick="startListening()">
-                🎙 ACTIVATE VOICE
-            </button>
-
-            <p id="listening-status">VOICE SYSTEM STANDBY</p>
+            <h3>CORE ACTIVE</h3>
         </section>
 
-        <section class="dashboard">
-            <div class="card">
-                <h3> SYSTEM STATUS</h3>
-                <p class="online">● ONLINE</p>
+        <!-- SYSTEM STATUS -->
+        <section class="status-panel">
+            <h2>SYSTEM STATUS</h2>
+
+            <div class="status-item">
+                <span>CORE</span>
+                <span class="online">● ONLINE</span>
             </div>
 
-            <div class="card">
-                <h3>VOICE ENGINE</h3>
-                <p id="voice-engine">STANDBY</p>
+            <div class="status-item">
+                <span>NETWORK</span>
+                <span class="online">● ONLINE</span>
             </div>
 
-            <div class="card">
-                <h3>DATE & TIME</h3>
-                <p id="clock">--:--:--</p>
-                <p id="date"></p>
+            <div class="status-item">
+                <span>VOICE</span>
+                <span class="locked">● LOCKED</span>
             </div>
 
-            <div class="card">
-                <h3>WEATHER</h3>
-                <p>Awaiting data...</p>
+            <div class="status-item">
+                <span>MEMORY</span>
+                <span class="locked">● LOCKED</span>
             </div>
         </section>
 
+        <!-- CHAT DISPLAY -->
         <section class="chat-section">
-            <h2>JARVIS COMMUNICATION</h2>
-
-            <div id="chat-box">
-                <div class="jarvis-message">
-                    JARVIS: Good day, Sir. How may I assist you?
-                </div>
-            </div>
-
-            <div class="chat-input">
-                <input
-                    type="text"
-                    id="user-input"
-                    placeholder="Enter your command..."
-                >
-                <button onclick="sendMessage()">SEND</button>
+            <div class="chat-display" id="chat-display">
+                <!-- Messages appear here -->
             </div>
         </section>
 
-        <section class="tools-section">
-            <h2>QUICK COMMANDS</h2>
+        <!-- CHAT INPUT -->
+        <section class="input-section">
+            <input
+                type="text"
+                id="user-input"
+                placeholder="Ask JARVIS..."
+            >
 
-            <div class="tools-grid">
-                <button onclick="runCommand('time')">TIME</button>
-                <button onclick="runCommand('date')">DATE</button>
-                <button onclick="runCommand('google')">GOOGLE</button>
-                <button onclick="runCommand('youtube')">YOUTUBE</button>
-                <button onclick="runCommand('weather')">WEATHER</button>
-                <button onclick="runCommand('joke')">JOKE</button>
-            </div>
+            <button id="send-button">
+                SEND
+            </button>
         </section>
+
     </main>
 
-    <footer>
-        <p>J.A.R.V.I.S © 2026 | PERSONAL AI SYSTEM</p>
-        <p>DESIGNED FOR THE FUTURE</p>
-    </footer>
-
-    <script>
-        const clock = document.getElementById("clock");
-        const date = document.getElementById("date");
-
-        function updateClock() {
-            const now = new Date();
-            clock.textContent = now.toLocaleTimeString();
-            date.textContent = now.toDateString();
-        }
-
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        function addMessage(sender, message) {
-            const chatBox = document.getElementById("chat-box");
-            const div = document.createElement("div");
-
-            div.className = sender === "JARVIS"
-                ? "jarvis-message"
-                : "user-message";
-
-            div.textContent = sender + ": " + message;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function speak(text) {
-            if ("speechSynthesis" in window) {
-                const speech = new SpeechSynthesisUtterance(text);
-                speechSynthesis.speak(speech);
-            }
-        }
-
-        function respond(message) {
-            const command = message.toLowerCase();
-            let response = "I am still learning that command, Sir.";
-
-            if (command.includes("hello") || command.includes("hi")) {
-                response = "Hello, Sir. How can I help you?";
-            } else if (command.includes("your name")) {
-                response = "I am JARVIS, your personal AI assistant.";
-            } else if (command.includes("time")) {
-                response = "The current time is " + new Date().toLocaleTimeString();
-            } else if (command.includes("date")) {
-                response = "Today is " + new Date().toDateString();
-            } else if (command.includes("who are you")) {
-                response = "I am JARVIS. Just a Rather Very Intelligent System.";
-            } else if (command.includes("open google")) {
-                window.open("https://www.google.com", "_blank");
-                response = "Opening Google, Sir.";
-            } else if (command.includes("open youtube")) {
-                window.open("https://www.youtube.com", "_blank");
-                response = "Opening YouTube, Sir.";
-            } else if (command.includes("thank")) {
-                response = "You are welcome, Sir.";
-            }
-
-            addMessage("JARVIS", response);
-            speak(response);
-        }
-
-        function sendMessage() {
-            const input = document.getElementById("user-input");
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            addMessage("YOU", message);
-            input.value = "";
-            respond(message);
-        }
-
-        document.getElementById("user-input")
-            .addEventListener("keydown", function(event) {
-                if (event.key === "Enter") sendMessage();
-            });
-
-        function startListening() {
-            const SpeechRecognition =
-                window.SpeechRecognition ||
-                window.webkitSpeechRecognition;
-
-            if (!SpeechRecognition) {
-                alert("Voice recognition is not supported in this browser.");
-                return;
-            }
-
-            const recognition = new SpeechRecognition();
-            recognition.lang = "en-IN";
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            document.getElementById("voice-engine").textContent = "ACTIVE";
-            document.getElementById("listening-status").textContent =
-                "LISTENING...";
-
-            recognition.onresult = function(event) {
-                const message = event.results[0][0].transcript;
-                addMessage("YOU", message);
-                respond(message);
-            };
-
-            recognition.onerror = function() {
-                document.getElementById("listening-status").textContent =
-                    "VOICE ERROR";
-            };
-
-            recognition.onend = function() {
-                document.getElementById("voice-engine").textContent = "STANDBY";
-                document.getElementById("listening-status").textContent =
-                    "VOICE SYSTEM STANDBY";
-            };
-
-            recognition.start();
-        }
-
-        function runCommand(command) {
-            if (command === "google") {
-                window.open("https://www.google.com", "_blank");
-                addMessage("JARVIS", "Opening Google, Sir.");
-            } else if (command === "youtube") {
-                window.open("https://www.youtube.com", "_blank");
-                addMessage("JARVIS", "Opening YouTube, Sir.");
-            } else if (command === "time") {
-                respond("time");
-            } else if (command === "date") {
-                respond("date");
-            } else if (command === "weather") {
-                respond("weather");
-            } else if (command === "joke") {
-                respond("tell me a joke");
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 
 </body>
 </html>
