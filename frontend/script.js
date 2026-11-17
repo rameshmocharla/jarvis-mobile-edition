@@ -818,7 +818,203 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function installAndroidSharePreview() {
+        function installAndroidSharePreview() {
         const preview = document.getElementById("kalki-share-preview");
         const summary = document.getElementById("share-summary");
-        const files = document.getE
+        const files = document.getElementById("share-files");
+        const dismiss = document.getElementById("share-dismiss");
+        if (!preview) return;
+        let shared = null;
+        function clearPreview() { shared = null; preview.hidden = true; if (files) files.replaceChildren(); }
+        dismiss?.addEventListener("click", clearPreview);
+        document.querySelectorAll("[data-share-action]").forEach((button) => button.addEventListener("click", () => {
+            if (!shared) return;
+            const action = button.dataset.shareAction;
+            const subject = shared.title ? `\nTitle: ${shared.title}` : "";
+            const body = shared.text ? `\nContent: ${shared.text}` : "\nContent: Shared file content is available for review in the originating app.";
+            if (messageInput) { messageInput.value = `${action} this shared content.${subject}${body}\n\n[Draft — review and press Send to approve]`; messageInput.focus(); }
+            showMessage("KALKI", `${action} draft prepared. Review it in the composer; no action was sent or executed.`, "ai");
+        }));
+        window.addEventListener("kalki-share", (event) => {
+            shared = event.detail || {};
+            const type = shared.mimeType || "shared content";
+            const text = shared.text ? shared.text : `Received ${type}`;
+            if (summary) summary.textContent = text;
+            if (files) {
+                files.replaceChildren(...(Array.isArray(shared.files) ? shared.files.map((file) => {
+                    const row = document.createElement("div");
+                    row.textContent = `📎 ${file.name || "Shared item"} · ${file.mimeType || type}`;
+                    return row;
+                }) : []));
+            }
+            preview.hidden = false;
+            preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+    }
+
+    function voiceOptionValue(voice) {
+        return voice.voiceURI || `${voice.name}::${voice.lang}`;
+    }
+
+    function getSelectedTtsVoice(voices) {
+        const selected = ttsVoiceSelect?.value || "auto";
+        if (selected === "auto") return null;
+        return voices.find((voice) => voiceOptionValue(voice) === selected) || null;
+    }
+
+    function populateTtsVoiceOptions() {
+        if (!ttsVoiceSelect) return;
+        if (!("speechSynthesis" in window)) {
+            const option = document.createElement("option");
+            option.value = "auto";
+            option.textContent = "Browser default voice";
+            ttsVoiceSelect.replaceChildren(option);
+            ttsVoiceSelect.value = "auto";
+            return;
+        }
+
+        const voices = window.speechSynthesis.getVoices();
+        let saved = "";
+        try { saved = localStorage.getItem(TTS_VOICE_KEY) || ""; } catch (_) { /* Use a session-only choice. */ }
+        const previous = ttsVoiceSelect.value;
+        const autoOption = document.createElement("option");
+        autoOption.value = "auto";
+        autoOption.textContent = "Automatic by reply language";
+        const options = [autoOption, ...voices.map((voice) => {
+            const option = document.createElement("option");
+            option.value = voiceOptionValue(voice);
+            option.textContent = `${voice.name} · ${voice.lang || "device voice"}`;
+            return option;
+        })];
+        ttsVoiceSelect.replaceChildren(...options);
+        if (saved === "auto") {
+            ttsVoiceSelect.value = "auto";
+            if (ttsVoiceHelp) ttsVoiceHelp.textContent = "KALKI will follow the browser’s language-based voice choice.";
+            return;
+        }
+
+        const chosen = voices.find((voice) => voiceOptionValue(voice) === saved)
+            || voices.find((voice) => voiceOptionValue(voice) === previous)
+            || voices.find((voice) => voice.lang?.toLowerCase() === (voiceInputLanguage?.value || "en-IN").toLowerCase())
+            || voices.find((voice) => voice.lang?.toLowerCase().startsWith("en-in"))
+            || voices.find((voice) => voice.default)
+            || voices[0];
+        if (chosen) {
+            ttsVoiceSelect.value = voiceOptionValue(chosen);
+            try { localStorage.setItem(TTS_VOICE_KEY, ttsVoiceSelect.value); } catch (_) { /* Keep this choice for this page only. */ }
+            if (ttsVoiceHelp) ttsVoiceHelp.textContent = `KALKI will keep using ${chosen.name} (${chosen.lang}) on this device. Choose a Telugu voice if available for Telugu pronunciation.`;
+        } else {
+            ttsVoiceSelect.value = "auto";
+            if (ttsVoiceHelp) ttsVoiceHelp.textContent = "No device voice list is available yet; KALKI will use your browser’s default voice.";
+        }
+    }
+
+    function initializeVoiceControls() {
+        if (voiceInputLanguage) {
+            let savedLanguage = "en-IN";
+            try { savedLanguage = localStorage.getItem(VOICE_INPUT_LANGUAGE_KEY) || savedLanguage; } catch (_) { /* Keep default. */ }
+            if (!["en-IN", "te-IN"].includes(savedLanguage)) savedLanguage = "en-IN";
+            voiceInputLanguage.value = savedLanguage;
+            voiceInputLanguage.addEventListener("change", () => {
+                const language = voiceInputLanguage.value === "te-IN" ? "te-IN" : "en-IN";
+                try { localStorage.setItem(VOICE_INPUT_LANGUAGE_KEY, language); } catch (_) { /* Session-only preference. */ }
+                if (recognition) recognition.lang = language;
+                if (voiceConversationActive) {
+                    if (isListening && recognition) recognition.stop();
+                    else scheduleVoiceListening(150);
+                }
+            });
+        }
+        ttsVoiceSelect?.addEventListener("change", () => {
+            try { localStorage.setItem(TTS_VOICE_KEY, ttsVoiceSelect.value); } catch (_) { /* Use this page's selection only. */ }
+            const voice = getSelectedTtsVoice(window.speechSynthesis?.getVoices?.() || []);
+            if (ttsVoiceHelp) ttsVoiceHelp.textContent = voice
+                ? `KALKI will keep using ${voice.name} (${voice.lang}) on this device.`
+                : "KALKI will follow the browser’s language-based voice choice.";
+        });
+        if ("speechSynthesis" in window) {
+            populateTtsVoiceOptions();
+            window.speechSynthesis.onvoiceschanged = populateTtsVoiceOptions;
+        } else {
+            populateTtsVoiceOptions();
+        }
+    }
+
+    if (ttsAutoRead) {
+        try { ttsAutoRead.checked = localStorage.getItem(TTS_AUTO_READ_KEY) === "true"; }
+        catch (_) { ttsAutoRead.checked = false; }
+        if (ttsStatus) ttsStatus.textContent = ttsAutoRead.checked
+            ? "Text replies will be read aloud automatically. Voice chat always speaks while active."
+            : "Text chat stays quiet unless you tap Read aloud. Voice chat speaks while active.";
+        ttsAutoRead.addEventListener("change", () => {
+            try { localStorage.setItem(TTS_AUTO_READ_KEY, String(ttsAutoRead.checked)); }
+            catch (_) { /* The per-message speaker remains available if storage is disabled. */ }
+            if (ttsStatus) ttsStatus.textContent = ttsAutoRead.checked
+                ? "Text replies will be read aloud automatically. Voice chat always speaks while active."
+                : "Text chat stays quiet unless you tap Read aloud. Voice chat speaks while active.";
+        });
+    }
+    ttsStopButton?.addEventListener("click", () => {
+        stopSpeaking();
+        if (ttsStatus) ttsStatus.textContent = "Speech stopped.";
+    });
+    if (!("speechSynthesis" in window) && ttsStatus) {
+        ttsStatus.textContent = "This browser does not provide text-to-speech.";
+    }
+    desktopPairButton?.addEventListener("click", pairDesktopAgent);
+    desktopPairCodeInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { event.preventDefault(); pairDesktopAgent(); }
+    });
+    desktopUnpairButton?.addEventListener("click", async () => {
+        if (!desktopSessionToken) {
+            setDesktopAgentStatus("No active pairing in this page. Restart the agent if it is still paired elsewhere.");
+            return;
+        }
+        try {
+            const response = await fetch(`${DESKTOP_AGENT_URL}/v1/disconnect`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${desktopSessionToken}` },
+                body: JSON.stringify({})
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.ok) throw new Error(data.message || "Could not disconnect.");
+            desktopSessionToken = null;
+            setDesktopAgentStatus(data.message || "Disconnected. The agent created a new one-time code.");
+            refreshPendingDesktopApprovals(false);
+        } catch (_) {
+            desktopSessionToken = null;
+            setDesktopAgentStatus("Could not reach the agent. This page cleared its token; restart the agent to reset pairing.", "error");
+            refreshPendingDesktopApprovals(false);
+        }
+    });
+
+    settingsToggle?.addEventListener("click", () => {
+        const open = voiceSettings?.hasAttribute("hidden");
+        if (voiceSettings) voiceSettings.hidden = !open;
+        settingsToggle.setAttribute("aria-expanded", String(open));
+    });
+    saveApiKeyButton?.addEventListener("click", saveApiKey);
+    clearApiKeyButton?.addEventListener("click", clearApiKey);
+    apiKeyInput?.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); saveApiKey(); } });
+
+    if (sendButton) sendButton.addEventListener("click", sendMessage);
+    if (clearButton) clearButton.addEventListener("click", clearChat);
+    if (micButton) micButton.addEventListener("click", toggleVoice);
+
+    if (messageInput) {
+        messageInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    installAndroidSharePreview();
+    initializeVoiceControls();
+    setupVoice();
+    loadSavedChat();
+    refreshApiKeyStatus();
+    checkBackendStatus();
+    console.log("JARVIS AI fallback system loaded successfully.");
+});
