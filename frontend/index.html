@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>J.A.R.V.I.S | Mobile Edition</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <main class="jarvis-container">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1>J.A.R.V.I.S</h1>
+            <p>MOBILE EDITION</p>
+        </header>
+
+        <!-- CORE -->
+        <section class="core-section">
+
+            <div class="core">
+                <div class="core-ring ring-one"></div>
+                <div class="core-ring ring-two"></div>
+                <div class="core-ring ring-three"></div>
+                <div class="core-center"></div>
+            </div>
+
+            <h3 id="coreStatus">CORE ACTIVE</h3>
+
+        </section>
+
+        <!-- SYSTEM STATUS -->
+        <section class="status-panel">
+
+            <h2>SYSTEM STATUS</h2>
+
+            <div class="status-row">
+                <span>CORE</span>
+                <span class="online">● ONLINE</span>
+            </div>
+
+            <div class="status-row">
+                <span>NETWORK</span>
+                <span class="online">● ONLINE</span>
+            </div>
+
+            <div class="status-row">
+                <span>VOICE</span>
+                <span class="locked">● LOCKED</span>
+            </div>
+
+            <div class="status-row">
+                <span>MEMORY</span>
+                <span class="locked">● LOCKED</span>
+            </div>
+
+        </section>
+
+        <!-- CHAT AREA -->
+        <section class="chat-panel" id="chatPanel">
+
+            <div class="welcome-message">
+                SYSTEM READY<br>
+                <span>AWAITING YOUR COMMAND...</span>
+            </div>
+
+        </section>
+
+        <!-- INPUT AREA -->
+        <section class="input-section">
+
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Ask J.A.R.V.I.S..."
+                autocomplete="off"
+            >
+
+            <button id="sendButton">SEND</button>
+
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            J.A.R.V.I.S MOBILE SYSTEM © 2026
+        </footer>
+
+    </main>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
