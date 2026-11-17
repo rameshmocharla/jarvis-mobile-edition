@@ -4,9 +4,11 @@ const sendButton = document.getElementById("sendButton");
 const chatPanel = document.getElementById("chatPanel");
 const coreStatus = document.getElementById("coreStatus");
 
+// Replace this with your deployed backend URL later
+const API_URL = "https://YOUR-BACKEND.onrender.com/api/chat";
+
 // Add message to chat
 function addMessage(sender, message, className) {
-
     const welcome = chatPanel.querySelector(".welcome-message");
 
     if (welcome) {
@@ -27,76 +29,70 @@ function addMessage(sender, message, className) {
     messageBox.appendChild(content);
 
     chatPanel.appendChild(messageBox);
-
     chatPanel.scrollTop = chatPanel.scrollHeight;
 }
 
-// JARVIS local demo response
-function getJarvisResponse(command) {
+// Send message to Gemini through backend
+async function getJarvisResponse(command) {
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: command
+        })
+    });
 
-    const text = command.toLowerCase().trim();
-
-    if (text.includes("hello") || text.includes("hi")) {
-        return "Hello! I am JARVIS. How can I assist you?";
+    if (!response.ok) {
+        throw new Error("Gemini server connection failed.");
     }
 
-    if (text.includes("your name")) {
-        return "I am J.A.R.V.I.S, your personal virtual assistant.";
+    const data = await response.json();
+
+    if (!data.reply) {
+        throw new Error("No response received from Gemini.");
     }
 
-    if (text.includes("how are you")) {
-        return "All systems operational. I am functioning normally.";
-    }
-
-    if (text.includes("time")) {
-        return "Current time is " + new Date().toLocaleTimeString();
-    }
-
-    if (text.includes("date")) {
-        return "Today's date is " + new Date().toLocaleDateString();
-    }
-
-    if (text.includes("status")) {
-        return "Core: ONLINE. Network: ONLINE. Voice: LOCKED. Memory: LOCKED.";
-    }
-
-    if (text.includes("help")) {
-        return "Try asking me about my name, system status, time or date.";
-    }
-
-    return "Command received. My local demo mode is active. Connect the Gemini backend to enable intelligent AI responses.";
+    return data.reply;
 }
 
 // Send command
-function sendMessage() {
-
+async function sendMessage() {
     const command = userInput.value.trim();
 
-    if (command === "") {
+    if (command === "" || sendButton.disabled) {
         return;
     }
 
     addMessage("YOU", command, "user-message");
 
     userInput.value = "";
-
     coreStatus.textContent = "PROCESSING...";
-
     sendButton.disabled = true;
 
-    setTimeout(() => {
+    try {
+        const answer = await getJarvisResponse(command);
 
-        const response = getJarvisResponse(command);
-
-        addMessage("J.A.R.V.I.S", response, "jarvis-message");
+        addMessage("J.A.R.V.I.S", answer, "jarvis-message");
 
         coreStatus.textContent = "CORE ACTIVE";
 
+    } catch (error) {
+        addMessage(
+            "J.A.R.V.I.S",
+            "Unable to connect to my AI brain. Please check the server connection.",
+            "jarvis-message"
+        );
+
+        coreStatus.textContent = "CONNECTION ERROR";
+
+        console.error(error);
+
+    } finally {
         sendButton.disabled = false;
-
         userInput.focus();
-
-    }, 600);
+    }
 }
 
 // Button click
@@ -104,18 +100,14 @@ sendButton.addEventListener("click", sendMessage);
 
 // Enter key
 userInput.addEventListener("keydown", function(event) {
-
     if (event.key === "Enter") {
         sendMessage();
     }
-
 });
 
 // Initial status
 window.addEventListener("load", () => {
-
     coreStatus.textContent = "CORE ACTIVE";
 
     console.log("J.A.R.V.I.S MOBILE SYSTEM INITIALIZED");
-
 });
